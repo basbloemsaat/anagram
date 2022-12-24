@@ -1,0 +1,52 @@
+body,
+html {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+}
+
+main {
+  padding: 10px;
+}
+
+footer {
+  text-align: right;
+}
+
+textarea {
+  width: 100%;
+  height: 5rem;
+  font-size: large;
+}
+
+svg {
+  border: 1px solid green;
+  // margin: 1vw;
+  width: 100%;
+  height: 30rem;
+
+  rect.bg {
+    fill: lightgray;
+    stroke: black;
+    stroke-width: 3;
+  }
+  rect.dragt {
+    fill: red;
+  }
+
+  text {
+    text-anchor: middle;
+    dominant-baseline: middle;
+    font-size: 2em;
+  }
+}
+
+rect.cell {
+  fill: lightgreen;
+
+  &.stable {
+    fill: black;
+  }
+}
