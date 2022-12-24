@@ -38,6 +38,10 @@ svg {
   width: 100%;
   height: 20rem;
 
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+
   text {
     text-anchor: middle;
     dominant-baseline: middle;
