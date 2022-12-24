@@ -34,14 +34,15 @@ function textToGraph(t: string): Graph {
     links: [],
   };
 
-  graph.nodes.unshift({ letter: " ", id: -1, fx: 0, fy: 0 });
-  graph.nodes.push({ letter: " ", id: 999, fx: 800, fy: 0 });
+  graph.nodes.unshift({ letter: " ", id: -1, fx: 0, fy: 0, y: 0 });
+  graph.nodes.push({ letter: " ", id: 999, fx: 800, fy: 0, y: 0 });
 
   let x = Array.from(Array(graph.nodes.length).keys()).map((d) => "" + d);
   scale.domain(x);
 
   graph.nodes.forEach((node, i) => {
     node.fx = scale("" + i);
+    node.x = scale("" + i);
     if (i < graph.nodes.length - 1) {
       graph.links.push({ source: graph.nodes[i], target: graph.nodes[i + 1] });
     }
@@ -81,16 +82,30 @@ function ticked() {
     .attr("y2", (d) => d.target.y);
 }
 
+console.log(width / (graph.nodes.length - 1));
+
 const simulation = d3
   .forceSimulation(graph.nodes)
-  .force("charge", d3.forceManyBody().strength(-1000))
-  .force("link", d3.forceLink(graph.links).strength(1))
+  .force("charge", d3.forceManyBody().strength(-10))
+  .force(
+    "link",
+    d3
+      .forceLink(graph.links)
+      .strength(1)
+      // .distance(90)
+      .distance(width / (graph.nodes.length - 3))
+      .iterations(1000)
+  )
+  //// .force("center", d3.forceCenter())
   .force("x", d3.forceX())
-  .force("y", d3.forceY())
+  // .force("y", d3.forceY())
   .on("tick", ticked);
+
+// setTimeout(() => {
 
 graph.nodes.forEach((node, i) => {
   if (node.id != -1 && node.id != 999) {
     node.fx = null;
   }
 });
+// }, 2000)
