@@ -6,7 +6,7 @@ module.exports = merge(common, {
   mode: "production",
   plugins: [
     new HtmlInlineScriptPlugin({
-      scriptMatchPattern: [/bundle[.]js$/, /app~.+[.]js$/],
+      scriptMatchPattern: [/index[.]js$/],
     }),
   ],
   output: {

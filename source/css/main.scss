@@ -5,6 +5,7 @@ html {
   padding: 0;
   width: 100%;
   min-height: 100%;
+  font-family: "Martel Sans";
 }
 
 main {
@@ -13,6 +14,9 @@ main {
 
 footer {
   text-align: right;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
 }
 
 input {
@@ -21,9 +25,18 @@ input {
   text-align: center;
 }
 
+div.random {
+  text-align: right;
+}
+
+button {
+  width: 40em;
+  height: 6em;
+}
+
 svg {
   width: 100%;
-  height: 30rem;
+  height: 20rem;
 
   text {
     text-anchor: middle;

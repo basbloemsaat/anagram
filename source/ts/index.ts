@@ -5,7 +5,7 @@ const svg = d3.select("svg");
 
 let width = parseInt(svg.style("width"));
 let height = parseInt(svg.style("height"));
-const scaleLin = d3.scaleLinear().range([0, width]);
+const scaleLin = d3.scaleLinear().range([50, width - 50]);
 const g = svg
   .append("g")
   .classed("graph", true)
@@ -26,17 +26,43 @@ function textToGraph(t: string): Chain {
   const text_array = t.split("");
   const graph: Chain = {
     nodes: text_array.map((e: string, i: number) => {
-      return { letter: e, id: i + 1, fy: 0 };
+      return { letter: e, id: i, fy: 0 };
     }),
   };
-
-  graph.nodes.unshift({ letter: " ", id: 0, end: true });
-  graph.nodes.push({ letter: " ", id: graph.nodes.length, end: true });
 
   let x = Array.from(Array(graph.nodes.length).keys()).map((d) => "" + d);
   scaleLin.domain([0, graph.nodes.length - 1]);
 
   return graph;
+}
+
+function shuffle(array: Node[]) {
+  let currentIndex = array.length,
+    randomIndex;
+
+  // While there remain elements to shuffle.
+  while (currentIndex != 0) {
+    // Pick a remaining element.
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex],
+      array[currentIndex],
+    ];
+  }
+
+  return array;
+}
+
+function randomizeNodes() {
+  shuffle(graph.nodes);
+  reidNodes(graph);
+  g.selectAll("g.node")
+    .transition()
+    .duration(200)
+    .attr("transform", (d: Node) => `translate(${scaleLin(d.id)},0)`);
 }
 
 function reidNodes(graph: Chain): void {
@@ -124,14 +150,12 @@ const redraw = () => {
 
 redraw();
 
-// const node = g.selectAll("circle.node").data(graph.nodes).join("circle");
-
-d3.select("form").on("submit", (e: SubmitEvent) => {
+d3.select("input").on("keyup", () => {
   redraw();
-  e.preventDefault();
-  return false;
 });
 
-d3.select("input").on("keyup", (e: SubmitEvent) => {
-  redraw();
+d3.select("button#randomizer").on("click", (e: Event) => {
+  randomizeNodes();
+  e.preventDefault();
+  return false;
 });
