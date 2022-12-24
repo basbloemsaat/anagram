@@ -6,7 +6,10 @@ function LOADED() {
 
   let width = parseInt(svg.style("width"));
   let height = parseInt(svg.style("height"));
-  const scaleLin = d3.scaleLinear().range([50, width - 50]);
+
+  let rcircle = 30; //fixed val good enough for my use
+
+  const scaleLin = d3.scaleLinear().range([rcircle, width - rcircle]);
   const g = svg
     .append("g")
     .classed("graph", true)
@@ -33,7 +36,13 @@ function LOADED() {
 
     let x = Array.from(Array(graph.nodes.length).keys()).map((d) => "" + d);
     scaleLin.domain([0, graph.nodes.length - 1]);
-
+    let mid = width / 2;
+    let left = mid - (graph.nodes.length / 2) * (rcircle * 2);
+    let right = mid + (graph.nodes.length / 2) * (rcircle * 2);
+    scaleLin.range([
+      clamp(left, 0 + rcircle, width - rcircle),
+      clamp(right, 0 + rcircle, width - rcircle),
+    ]);
     return graph;
   }
 
@@ -131,20 +140,11 @@ function LOADED() {
       .classed("end", (d: Node) => !!d.end)
       .attr("transform", (d) => `translate(${scaleLin(d.id)},0)`);
 
-    node
-      .append("circle")
-      // .attr("cx", (d, i) => scaleLin(d.id))
-      .classed("backg", true);
+    node.append("circle").attr("r", rcircle).classed("backg", true);
 
-    node
-      .append("text")
-      // .attr("x", (d, i) => scaleLin(d.id))
-      .text((d) => d.letter);
+    node.append("text").text((d) => d.letter);
 
-    node
-      .append("circle")
-      // .attr("cx", (d, i) => scaleLin(d.id))
-      .classed("overlay", true);
+    node.append("circle").attr("r", rcircle).classed("overlay", true);
 
     g.selectAll(".node").call(drag);
   };

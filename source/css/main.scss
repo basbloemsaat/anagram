@@ -46,19 +46,12 @@ svg {
 
   g.node {
     circle {
-      r: 30;
       &.backg {
         fill: lightgray;
       }
       &.overlay {
         fill: transparent;
       }
-    }
-  }
-
-  g.end {
-    circle {
-      r: 0;
     }
   }
 }
