@@ -4,70 +4,93 @@ import * as d3 from "d3";
 const svg = d3.select("svg");
 
 let width = parseInt(svg.style("width"));
-const scale = d3.scaleBand().range([0, width]).align(0.5).paddingInner(0.2);
+let height = parseInt(svg.style("height"));
+const scale = d3.scalePoint().range([0, width]).align(0.5);
 
-const drag_start = function (event: Event) {
-  console.log("drag_start", event);
-};
+interface GraphNode extends d3.SimulationNodeDatum {
+  letter: string;
+  id: number;
+  fx?: number;
+  fy?: number;
+}
+interface GraphEdge {
+  source: GraphNode;
+  target: GraphNode;
+}
 
-//@ts-expect-erro r
-// d3.DragEvent not in types
-const drag_drag = function (event: any, d: any) {
-  console.log("drag_drag", event, d, this);
-  //   console.log(event);
-  this.attr("x", 100);
-};
-const drag_end = function (event: Event, d: any) {
-  console.log("drag_end", event);
-};
-let dragging = null;
+interface Graph {
+  nodes: GraphNode[];
+  links: GraphEdge[];
+}
 
-const drawletters = function (t: string) {
+function textToGraph(t: string): Graph {
   const text_array = t.split("");
-  let x = Array.from(Array(text_array.length).keys()).map((d) => "" + d);
+  // text_array.push(" ");
+  // text_array.unshift(" ");
+  const graph: Graph = {
+    nodes: text_array.map((e: string, i: number) => {
+      return { letter: e, id: i, fy: 0 };
+    }),
+    links: [],
+  };
 
+  graph.nodes.unshift({ letter: " ", id: -1, fx: 0, fy: 0 });
+  graph.nodes.push({ letter: " ", id: 999, fx: 800, fy: 0 });
+
+  let x = Array.from(Array(graph.nodes.length).keys()).map((d) => "" + d);
   scale.domain(x);
-  let bw = scale.bandwidth();
 
-  const letters = svg
-    .selectAll("g.letter")
-    .data(text_array)
-    .join("g")
-    .classed("letter", true)
-    .attr("transform", (d, i) => {
-      return `translate(${scale("" + i)},50)`;
-    });
+  graph.nodes.forEach((node, i) => {
+    node.fx = scale("" + i);
+    if (i < graph.nodes.length - 1) {
+      graph.links.push({ source: graph.nodes[i], target: graph.nodes[i + 1] });
+    }
+  });
 
-  letters
-    .append("rect")
-    .attr("width", bw)
-    .attr("height", bw)
-    .classed("bg", true);
-  letters
-    .append("text")
-    .attr("x", bw / 2)
-    .attr("y", bw / 2)
-    .text((d) => d);
-  letters
-    .append("rect")
-    .attr("width", bw)
-    .attr("height", bw)
-    .classed("dragt", true);
-
-  letters.selectAll("rect.dragt").call(
-    d3
-      .drag()
-      .subject((d) => {
-        console.log(d);
-        console.log(this);
-        return d;
-      })
-      .on("start", drag_start)
-      .on("drag", drag_drag)
-      .on("end", drag_end)
-  );
-};
+  return graph;
+}
 
 // @ts-expect-error
-let text = d3.select("textarea").node().value;
-drawletters(text);
+const graph = textToGraph(d3.select("textarea").node().value);
+
+const g = svg
+  .append("g")
+  .classed("graph", true)
+  .attr("transform", "translate(0,200)");
+
+const link = g
+  .selectAll(".link")
+  .data(graph.links)
+  .join("line")
+  .classed("link", true);
+
+const node = g
+  .selectAll(".node")
+  .data(graph.nodes)
+  .join("circle")
+  .attr("r", 5)
+  .classed("node", true)
+  .classed("fixed", (d) => d.fx !== undefined);
+
+function ticked() {
+  node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
+  link
+    .attr("x1", (d) => d.source.x)
+    .attr("y1", (d) => d.source.y)
+    .attr("x2", (d) => d.target.x)
+    .attr("y2", (d) => d.target.y);
+}
+
+const simulation = d3
+  .forceSimulation(graph.nodes)
+  .force("charge", d3.forceManyBody().strength(-1000))
+  .force("link", d3.forceLink(graph.links).strength(1))
+  .force("x", d3.forceX())
+  .force("y", d3.forceY())
+  .on("tick", ticked);
+
+graph.nodes.forEach((node, i) => {
+  if (node.id != -1 && node.id != 999) {
+    node.fx = null;
+  }
+});

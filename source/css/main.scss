@@ -41,6 +41,11 @@ svg {
     dominant-baseline: middle;
     font-size: 2em;
   }
+
+  line.link {
+    stroke: black;
+    stroke-width: 1;
+  }
 }
 
 rect.cell {
