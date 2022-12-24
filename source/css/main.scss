@@ -15,26 +15,15 @@ footer {
   text-align: right;
 }
 
-textarea {
+input {
   width: 100%;
-  height: 5rem;
   font-size: large;
+  text-align: center;
 }
 
 svg {
-  border: 1px solid green;
-  // margin: 1vw;
   width: 100%;
   height: 30rem;
-
-  rect.bg {
-    fill: lightgray;
-    stroke: black;
-    stroke-width: 3;
-  }
-  rect.dragt {
-    fill: red;
-  }
 
   text {
     text-anchor: middle;
@@ -42,16 +31,21 @@ svg {
     font-size: 2em;
   }
 
-  line.link {
-    stroke: black;
-    stroke-width: 1;
+  g.node {
+    circle {
+      r: 30;
+      &.backg {
+        fill: lightgray;
+      }
+      &.overlay {
+        fill: transparent;
+      }
+    }
   }
-}
 
-rect.cell {
-  fill: lightgreen;
-
-  &.stable {
-    fill: black;
+  g.end {
+    circle {
+      r: 0;
+    }
   }
 }

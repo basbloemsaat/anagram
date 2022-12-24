@@ -5,107 +5,133 @@ const svg = d3.select("svg");
 
 let width = parseInt(svg.style("width"));
 let height = parseInt(svg.style("height"));
-const scale = d3.scalePoint().range([0, width]).align(0.5);
-
-interface GraphNode extends d3.SimulationNodeDatum {
-  letter: string;
-  id: number;
-  fx?: number;
-  fy?: number;
-}
-interface GraphEdge {
-  source: GraphNode;
-  target: GraphNode;
-}
-
-interface Graph {
-  nodes: GraphNode[];
-  links: GraphEdge[];
-}
-
-function textToGraph(t: string): Graph {
-  const text_array = t.split("");
-  // text_array.push(" ");
-  // text_array.unshift(" ");
-  const graph: Graph = {
-    nodes: text_array.map((e: string, i: number) => {
-      return { letter: e, id: i, fy: 0 };
-    }),
-    links: [],
-  };
-
-  graph.nodes.unshift({ letter: " ", id: -1, fx: 0, fy: 0, y: 0 });
-  graph.nodes.push({ letter: " ", id: 999, fx: 800, fy: 0, y: 0 });
-
-  let x = Array.from(Array(graph.nodes.length).keys()).map((d) => "" + d);
-  scale.domain(x);
-
-  graph.nodes.forEach((node, i) => {
-    node.fx = scale("" + i);
-    node.x = scale("" + i);
-    if (i < graph.nodes.length - 1) {
-      graph.links.push({ source: graph.nodes[i], target: graph.nodes[i + 1] });
-    }
-  });
-
-  return graph;
-}
-
-// @ts-expect-error
-const graph = textToGraph(d3.select("textarea").node().value);
-
+const scaleLin = d3.scaleLinear().range([0, width]);
 const g = svg
   .append("g")
   .classed("graph", true)
   .attr("transform", "translate(0,200)");
 
-const link = g
-  .selectAll(".link")
-  .data(graph.links)
-  .join("line")
-  .classed("link", true);
-
-const node = g
-  .selectAll(".node")
-  .data(graph.nodes)
-  .join("circle")
-  .attr("r", 5)
-  .classed("node", true)
-  .classed("fixed", (d) => d.fx !== undefined);
-
-function ticked() {
-  node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
-  link
-    .attr("x1", (d) => d.source.x)
-    .attr("y1", (d) => d.source.y)
-    .attr("x2", (d) => d.target.x)
-    .attr("y2", (d) => d.target.y);
+interface Node {
+  letter: string;
+  id: number;
+  end?: boolean;
+}
+interface Chain {
+  nodes: Node[];
 }
 
-console.log(width / (graph.nodes.length - 1));
+let graph: Chain;
 
-const simulation = d3
-  .forceSimulation(graph.nodes)
-  .force("charge", d3.forceManyBody().strength(-10))
-  .force(
-    "link",
-    d3
-      .forceLink(graph.links)
-      .strength(1)
-      // .distance(90)
-      .distance(width / (graph.nodes.length - 3))
-      .iterations(1000)
-  )
-  //// .force("center", d3.forceCenter())
-  .force("x", d3.forceX())
-  // .force("y", d3.forceY())
-  .on("tick", ticked);
+function textToGraph(t: string): Chain {
+  const text_array = t.split("");
+  const graph: Chain = {
+    nodes: text_array.map((e: string, i: number) => {
+      return { letter: e, id: i + 1, fy: 0 };
+    }),
+  };
 
-// setTimeout(() => {
+  graph.nodes.unshift({ letter: " ", id: 0, end: true });
+  graph.nodes.push({ letter: " ", id: graph.nodes.length, end: true });
 
-graph.nodes.forEach((node, i) => {
-  if (node.id != -1 && node.id != 999) {
-    node.fx = null;
+  let x = Array.from(Array(graph.nodes.length).keys()).map((d) => "" + d);
+  scaleLin.domain([0, graph.nodes.length - 1]);
+
+  return graph;
+}
+
+function reidNodes(graph: Chain): void {
+  graph.nodes.forEach((e, i) => {
+    e.id = i;
+  });
+}
+
+function clamp(x: number, lo: number, hi: number) {
+  return x < lo ? lo : x > hi ? hi : x;
+}
+
+let dragnode: Node;
+
+function dragstart(event: MouseEvent, d: Node) {
+  dragnode = graph.nodes[d.id];
+}
+
+function dragged(event: MouseEvent, d: Node) {
+  let x = clamp(event.x, 0, width);
+  d3.select(this).attr("transform", (d) => `translate(${event.x},0)`);
+
+  let new_id = Math.round(scaleLin.invert(x));
+
+  if (new_id != d.id) {
+    let oldpos = d.id;
+    let node = graph.nodes[oldpos];
+
+    let newpos = new_id;
+    graph.nodes.splice(oldpos, 1);
+    graph.nodes.splice(newpos, 0, node);
+    reidNodes(graph);
+    g.selectAll("g.node")
+      .filter((d: Node) => d.id != node.id)
+      .transition()
+      .duration(200)
+      .attr("transform", (d: Node) => `translate(${scaleLin(d.id)},0)`);
+
+    // .attr("cx", (d: Node, i) => scaleLin(d.id));
   }
+}
+
+function dragend(event: MouseEvent, d: Node) {
+  g.selectAll("g.node").attr(
+    "transform",
+    (d: Node) => `translate(${scaleLin(d.id)},0)`
+  );
+}
+
+const drag = d3
+  .drag()
+  .on("start", dragstart)
+  .on("drag", dragged)
+  .on("end", dragend);
+
+const redraw = () => {
+  // @ts-expect-error
+  graph = textToGraph(d3.select("input").node().value);
+
+  const node = g
+    .selectAll("g.node")
+    .data(graph.nodes)
+    .join("g")
+    .classed("node", true)
+    .classed("end", (d: Node) => !!d.end)
+    .attr("transform", (d) => `translate(${scaleLin(d.id)},0)`);
+
+  node
+    .append("circle")
+    // .attr("cx", (d, i) => scaleLin(d.id))
+    .classed("backg", true);
+
+  node
+    .append("text")
+    // .attr("x", (d, i) => scaleLin(d.id))
+    .text((d) => d.letter);
+
+  node
+    .append("circle")
+    // .attr("cx", (d, i) => scaleLin(d.id))
+    .classed("overlay", true);
+
+  g.selectAll(".node").call(drag);
+};
+
+redraw();
+
+// const node = g.selectAll("circle.node").data(graph.nodes).join("circle");
+
+d3.select("form").on("submit", (e: SubmitEvent) => {
+  redraw();
+  e.preventDefault();
+  return false;
 });
-// }, 2000)
+
+d3.select("input").on("keyup", (e: SubmitEvent) => {
+  redraw();
+});
