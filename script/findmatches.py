@@ -44,7 +44,7 @@ def main():
     d_kandidaten = preplijst(kandidaten)
 
     # pp(d_anagrammen)
-    pp(d_kandidaten)
+    # pp(d_kandidaten)
 
     for a in d_anagrammen:
         pp(a)
